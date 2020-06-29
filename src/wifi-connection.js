@@ -209,7 +209,7 @@ module.exports = class WiFiConnection {
                 self.getStatus().then((status) => {
 
                     debug(sprintf('Connection status ssid=%s ip_address=%s ...', status.ssid || '', status.ip_address || ''));
-                    
+
                     if (isString(status.ip_address) && status.ssid == ssid) {
                         return Promise.resolve();
                     }
@@ -320,7 +320,7 @@ module.exports = class WiFiConnection {
         }
 
         return new Promise((resolve, reject) => {
-
+          
             scan().then((ssid) => {
                 return scan_results();
             })
@@ -330,13 +330,35 @@ module.exports = class WiFiConnection {
 
                 var ssids = [];
 
+                //Edit : 28.06.20
+                //Added wifi security sniff.
+                //Author Francisco Maia
+                var getSecurity = (param) => {
+                  var isProtected = false
+                  var securityParams = param.match(/\[.*?\]/g);
+                  for(var securityIndex in securityParams){
+                    var security = securityParams[securityIndex]
+                    if(security == "[ESS]"){
+                      isProtected = false
+                    }else if(security.indexOf("WPA2") > -1){
+                      isProtected = true
+                      break;
+                    }else if(security.indexOf("WEP") > -1){
+                      isProtected = true
+                      break;
+                    }
+                  }
+                  return isProtected;
+                }
+
                 output.forEach((line) => {
                     var params = line.split('\t');
                     ssids.push({
                         bssid         : params[0],
                         frequency     : parseInt(params[1]),
                         signalLevel   : parseInt(params[2]),
-                        ssid          : params[4]
+                        ssid          : params[4],
+                        isProtected      : getSecurity(params[3])
                     });
 
                 });
